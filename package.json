@@ -10,7 +10,7 @@
   "description": "Astradio – single-process server (static + ephemeris via Swiss Ephemeris)",
   "main": "server/index.js",
   "scripts": {
-    "start": "node server/index.js",
+    "start": "node staging-server.js",
     "dev": "nodemon server/index.js",
     "db:migrate": "node scripts/migrate.js",
     "db:seed": "node scripts/seed.js",
