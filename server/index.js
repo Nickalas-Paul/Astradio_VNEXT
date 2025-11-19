@@ -7,7 +7,7 @@ const rateLimit = require("express-rate-limit");
 require("dotenv").config();
 
 // vNext compiled handlers (do NOT import .ts directly) — optional for dev boot
-const { optionalRequire, noopMiddleware, noopRouter } = require('../lib/opt/optional');
+const { optionalRequire, noopMiddleware, noopRouter } = require('./lib/opt/optional');
 
 const noopMw = noopMiddleware();
 const noopRouterInstance = noopRouter();
