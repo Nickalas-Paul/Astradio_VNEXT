@@ -14,7 +14,8 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 
 # Install dependencies (include dev deps for vnext:build)
-RUN npm ci && npm cache clean --force
+# Use npm ci if package-lock.json exists, otherwise npm install
+RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi && npm cache clean --force
 
 # Build vNext system
 COPY . .
