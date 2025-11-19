@@ -13,8 +13,8 @@ WORKDIR /app
 # Copy package files
 COPY package.json package-lock.json* ./
 
-# Install dependencies
-RUN npm ci --only=production && npm cache clean --force
+# Install dependencies (include dev deps for vnext:build)
+RUN npm ci && npm cache clean --force
 
 # Build vNext system
 COPY . .
