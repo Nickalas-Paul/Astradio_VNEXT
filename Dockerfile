@@ -21,12 +21,11 @@ RUN rm -f package-lock.json && npm install && npm cache clean --force
 RUN node -v && npm -v && ls -lah
 
 # Build vNext system (runtime only - excludes dev scripts)
-COPY . .
+COPY --chown=node:node . .
 RUN npm run vnext:build:runtime
 
-# Switch to non-root user
-RUN useradd -m -u 1000 nodeuser && chown -R nodeuser:nodeuser /app
-USER nodeuser
+# Switch to non-root user (use existing node user from base image)
+USER node
 
 # Environment variables
 ENV NODE_ENV=production
