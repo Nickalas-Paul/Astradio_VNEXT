@@ -1,0 +1,31 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2019",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "outDir": "../dist/vnext",
+    "rootDir": "../",
+    "declaration": false,
+    "sourceMap": false,
+    "allowJs": false,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "baseUrl": "..",
+    "paths": {
+      "lib/*": ["lib/*"]
+    }
+  },
+  "include": [
+    "api/**/*.ts",
+    "teacher/**/*.ts"
+  ],
+  "exclude": [
+    "scripts/**/*.ts",
+    "explainer/**/*.ts"
+  ]
+}
+

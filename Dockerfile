@@ -20,9 +20,9 @@ RUN rm -f package-lock.json && npm install && npm cache clean --force
 # Build sanity check
 RUN node -v && npm -v && ls -lah
 
-# Build vNext system
+# Build vNext system (runtime only - excludes dev scripts)
 COPY . .
-RUN npm run vnext:build
+RUN npm run vnext:build:runtime
 
 # Switch to non-root user
 RUN useradd -m -u 1000 nodeuser && chown -R nodeuser:nodeuser /app
