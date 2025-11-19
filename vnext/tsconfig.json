@@ -19,7 +19,10 @@
       "src/*": ["src/*"]
     }
   },
-  "include": ["**/*.ts"],
+  "include": [
+    "**/*.ts",
+    "../lib/**/*.ts"
+  ],
   "exclude": [
     // Exclude unstable test/harness files for H0 to ensure green build
     "explainer/test-*.ts",
