@@ -1,24 +1,42 @@
-FROM node:20-alpine
+FROM node:20-bullseye-slim
 
-# Install build dependencies for native modules
-RUN apk add --no-cache python3 make g++
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    python3 \
+    make \
+    g++ \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 # Copy package files
-COPY package*.json ./
+COPY package.json package-lock.json* ./
 
 # Install dependencies
-RUN npm ci --only=production
+RUN npm ci --only=production && npm cache clean --force
 
-# Copy source code
+# Build vNext system
 COPY . .
+RUN npm run vnext:build
 
-# Build the application
-RUN npm run build
+# Switch to non-root user
+RUN useradd -m -u 1000 nodeuser && chown -R nodeuser:nodeuser /app
+USER nodeuser
+
+# Environment variables
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOST=0.0.0.0
+ENV NEXT_TELEMETRY_DISABLED=1
 
 # Expose port
 EXPOSE 3000
 
-# Start the application
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:3000/health || exit 1
+
+# Start server
 CMD ["npm", "start"]
+
