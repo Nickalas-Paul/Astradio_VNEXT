@@ -44,6 +44,7 @@ const libraryRoutes = optionalRequire(path.join(__dirname, "..", "dist", "routes
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || '0.0.0.0';
 const BETA_ENABLED = process.env.BETA_ACCESS !== 'false';
 const BETA_KILL = process.env.BETA_KILL_SWITCH === 'true';
 const BETA_ALLOW = (process.env.BETA_ALLOWLIST || '').split(',').map(s=>s.trim()).filter(Boolean);
@@ -1811,7 +1812,7 @@ app.get("*", (_, res) => {
 });
 
 // Start server
-app.listen(PORT, async () => {
+app.listen(PORT, HOST, async () => {
   try {
     console.log(`Astradio server running on http://localhost:${PORT}`);
     console.log(`Serving static from ${PUBLIC_DIR}`);
