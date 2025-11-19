@@ -1,0 +1,56 @@
+name: Deploy to Render
+
+on:
+  workflow_dispatch:
+    inputs:
+      render_url:
+        description: 'Existing Render service URL (optional - leave empty to create new)'
+        required: false
+
+jobs:
+  create-or-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy to Render (if API key available)
+        if: env.RENDER_API_KEY != ''
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          echo "Render API key found - attempting to create/update service"
+          # Render CLI or API call would go here
+          # For now, document that manual creation is needed
+          echo "Render API integration requires Render CLI or direct API calls"
+          echo "Please create service manually or provide RENDER_API_KEY secret"
+
+      - name: Verify Render Service
+        if: github.event.inputs.render_url != ''
+        run: |
+          RENDER_URL="${{ github.event.inputs.render_url }}"
+          
+          echo "Verifying Render service at $RENDER_URL"
+          
+          # Test health endpoint
+          for i in {1..20}; do
+            if curl -f -s "$RENDER_URL/health" > /dev/null; then
+              echo "✅ Health endpoint responding"
+              curl -s "$RENDER_URL/health" | jq .
+              break
+            fi
+            echo "Waiting for service... (attempt $i/20)"
+            sleep 10
+          done
+          
+          # Test readyz endpoint
+          if curl -f -s "$RENDER_URL/readyz" > /dev/null; then
+            echo "✅ Readyz endpoint responding"
+            curl -s "$RENDER_URL/readyz" | jq .
+          else
+            echo "❌ Readyz endpoint not responding"
+            exit 1
+          fi
+
