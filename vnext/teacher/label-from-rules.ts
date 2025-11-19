@@ -537,7 +537,7 @@ function ensureMotifVocab(vocabPath: string): Record<string, number> {
   return seed;
 }
 
-import { generateChartHashSync } from '../../lib/hash/chartHash';
+import { generateChartHashSync } from 'lib/hash/chartHash';
 
 // Generate deterministic chart hash for data splitting
 function generateChartHash(snapshot: EphemerisSnapshot): string {

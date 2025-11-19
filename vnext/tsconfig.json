@@ -13,10 +13,9 @@
     "allowJs": false,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "baseUrl": "../",
+    "baseUrl": "..",
     "paths": {
-      "lib/*": ["lib/*"],
-      "src/*": ["src/*"]
+      "lib/*": ["lib/*"]
     }
   },
   "include": [

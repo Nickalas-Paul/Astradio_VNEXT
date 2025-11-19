@@ -39,7 +39,7 @@ interface SplitMetadata {
   created_at: string;
 }
 
-import { generateChartHashSync } from '../../lib/hash/chartHash';
+import { generateChartHashSync } from 'lib/hash/chartHash';
 
 function generateChartHash(chartData: any): string {
   return generateChartHashSync(chartData);

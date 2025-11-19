@@ -367,7 +367,7 @@ function generateSnapshot(candidate: any): EphemerisSnapshot {
 }
 
 // Generate chart hash
-import { generateChartHashSync } from '../../lib/hash/chartHash';
+import { generateChartHashSync } from 'lib/hash/chartHash';
 
 function generateChartHash(snapshot: EphemerisSnapshot): string {
   // Convert EphemerisSnapshot to ChartData format for hash generation
