@@ -21,7 +21,7 @@
   },
   "include": [
     "api/**/*.ts",
-    "teacher/**/*.ts"
+    "../lib/**/*.ts"
   ],
   "exclude": [
     "scripts/**/*.ts",
