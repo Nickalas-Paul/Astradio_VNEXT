@@ -1,45 +1,29 @@
-FROM node:20-bullseye-slim
-
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    python3 \
-    make \
-    g++ \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+# syntax=docker/dockerfile:1
+FROM node:20-slim
 
 WORKDIR /app
 
-# Copy package files
+# Install deps first
 COPY package.json package-lock.json* ./
+RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi && npm cache clean --force
 
-# Install dependencies (include dev deps for vnext:build)
-# Force npm install - remove any stale/invalid lockfile to avoid npm ci failures
-RUN rm -f package-lock.json && npm install && npm cache clean --force
-
-# Build sanity check
+# Show versions for debugging
 RUN node -v && npm -v && ls -lah
 
-# Build vNext system (runtime only - excludes dev scripts)
+# Copy source with ownership for the node user
 COPY --chown=node:node . .
+
+# Build only the runtime subset
 RUN npm run vnext:build:runtime
 
-# Switch to non-root user (use existing node user from base image)
+# Prepare writable dir for exports before switching user
+RUN mkdir -p /tmp/exports && chown -R node:node /tmp/exports
+
+# Run as non-root
 USER node
 
-# Environment variables
 ENV NODE_ENV=production
 ENV PORT=3000
-ENV HOST=0.0.0.0
-ENV NEXT_TELEMETRY_DISABLED=1
-
-# Expose port
 EXPOSE 3000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD curl -f http://localhost:3000/health || exit 1
-
-# Start server
 CMD ["npm", "start"]
-

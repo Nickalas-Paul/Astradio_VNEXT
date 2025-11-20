@@ -159,9 +159,22 @@ app.use(express.static(PUBLIC_DIR));
 const MEDIA_DIR = path.join(__dirname, "../media");
 app.use("/media", express.static(MEDIA_DIR));
 
-// Exports directory
-const EXPORTS_DIR = path.join(__dirname, "../exports");
-if (!fs.existsSync(EXPORTS_DIR)) fs.mkdirSync(EXPORTS_DIR, { recursive: true });
+// Exports directory - parameterized and hardened
+// For Render, /tmp is writable; for local dev, cwd()/exports is fine
+const EXPORT_ROOT = process.env.EXPORT_ROOT || path.join(process.cwd(), 'exports');
+
+try {
+  fs.mkdirSync(EXPORT_ROOT, { recursive: true });
+  console.log(`[EXPORTS] Using directory: ${EXPORT_ROOT}`);
+} catch (err) {
+  console.error('Failed to ensure EXPORT_ROOT exists:', {
+    EXPORT_ROOT,
+    error: err.message,
+  });
+  // Continue anyway - will fail on actual write, but won't crash on startup
+}
+
+const EXPORTS_DIR = EXPORT_ROOT;
 
 // ---------- Utilities ----------
 function sha256Str(s){ return require('crypto').createHash('sha256').update(s).digest('hex'); }
