@@ -6,7 +6,7 @@ services:
     dockerContext: .
     plan: starter
     region: oregon
-    buildCommand: npm run vnext:build
+    buildCommand: npm run vnext:build:runtime
     startCommand: npm start
     envVars:
       - key: NODE_ENV
