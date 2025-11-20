@@ -117,6 +117,9 @@ app.use((req, res, next) => {
   next();
 });
 
+// Trust proxy (Render adds X-Forwarded-For header)
+app.set('trust proxy', 1);
+
 // Rate limiting - more permissive for development and testing
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
