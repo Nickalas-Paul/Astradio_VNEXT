@@ -3,6 +3,13 @@ FROM node:20-slim
 
 WORKDIR /app
 
+# Install system dependencies required for native module compilation (swisseph needs Python, make, g++)
+RUN apt-get update && apt-get install -y \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
 # Install deps first
 COPY package.json package-lock.json* ./
 RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi && npm cache clean --force
