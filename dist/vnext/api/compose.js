@@ -35,8 +35,10 @@ class ComposeAPI {
             }
             // Generate idempotency key from request + model version
             const requestKey = this.sha256(JSON.stringify(request) + this.runtimeModel);
+            // TEMPORARY: Disable cache for Phase 2 validation
             // Check cache for idempotent response
-            if (this.compositionCache.has(requestKey)) {
+            const CACHE_ENABLED = process.env.ENABLE_COMPOSE_CACHE !== 'false'; // Default enabled, set to 'false' to disable
+            if (CACHE_ENABLED && this.compositionCache.has(requestKey)) {
                 console.log('[COMPOSE] Returning cached composition for key:', requestKey.slice(0, 8));
                 return this.compositionCache.get(requestKey);
             }
@@ -273,17 +275,32 @@ class ComposeAPI {
      * Generate payload for sky mode (real-time astro data)
      */
     async generateSkyPayload(skyParams) {
+        // Log skyParams for Phase 2 validation
+        console.log('[COMPOSE] generateSkyPayload called with:', {
+            latitude: skyParams.latitude,
+            longitude: skyParams.longitude,
+            datetime: skyParams.datetime
+        });
         // Mock implementation - would integrate with Swiss Ephemeris API
         const astroData = await this.fetchAstroData(skyParams);
+        // Log astro data for Phase 2 validation
+        console.log('[COMPOSE] fetchAstroData returned:', {
+            element_dominance: astroData.element_dominance,
+            aspect_tension: astroData.aspect_tension,
+            modality: astroData.modality
+        });
         // Mock student v2.3 inference - would use actual model
         const studentPredictions = await this.runStudentInference(astroData);
-        return {
+        const payload = {
             ...studentPredictions,
             element_dominance: astroData.element_dominance,
             aspect_tension: astroData.aspect_tension,
             modality: astroData.modality,
             hash: this.generateHash(astroData)
         };
+        // Log payload hash for Phase 2 validation
+        console.log('[COMPOSE] Generated payload hash:', payload.hash);
+        return payload;
     }
     /**
      * Generate payload for overlay mode (natal vs current comparison)
