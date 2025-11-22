@@ -26,7 +26,7 @@ class ComposeAPI {
      * Main compose endpoint - generates audio + text from control-surface payload
      */
     async compose(request) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
+        var _a, _b, _c, _d, _e, _f, _g;
         const startTime = process.hrtime.bigint();
         try {
             // Accept empty body by defaulting to sandbox mode
@@ -42,22 +42,39 @@ class ComposeAPI {
             }
             // Generate control-surface payload based on mode
             const payload = await this.generateControlPayload(request);
-            // Use shared FeatureEncoder for consistent feature extraction
-            const chartData = {
-                date: ((_a = request.chartData) === null || _a === void 0 ? void 0 : _a.date) || '1990-01-01',
-                time: ((_b = request.chartData) === null || _b === void 0 ? void 0 : _b.time) || '12:00',
-                lat: ((_c = request.chartData) === null || _c === void 0 ? void 0 : _c.lat) || 40.7128,
-                lon: ((_d = request.chartData) === null || _d === void 0 ? void 0 : _d.lon) || -74.0060
+            // Extract date/time/location from request for feature encoding
+            // For sky mode, extract from skyParams
+            let chartData = {
+                date: '1990-01-01',
+                time: '12:00',
+                lat: 40.7128,
+                lon: -74.0060
             };
-            // const encodedFeatures = await this.featureEncoder.encode(chartData);
-            // const featureVec = encodedFeatures.features.featureVector;
-            const featureVec = new Float32Array([0.5, 0.6, 0.7, 0.7, 0.3, 0.6]); // Mock feature vector
+            if (request.mode === 'sky' && request.skyParams) {
+                // Extract date from datetime string (format: YYYY-MM-DDTHH:mm:ssZ)
+                const dt = new Date(request.skyParams.datetime);
+                chartData.date = dt.toISOString().split('T')[0];
+                chartData.time = dt.toISOString().split('T')[1].slice(0, 5); // HH:mm
+                chartData.lat = request.skyParams.latitude;
+                chartData.lon = request.skyParams.longitude;
+            }
+            else if (request.chartData) {
+                chartData = {
+                    date: request.chartData.date || chartData.date,
+                    time: request.chartData.time || chartData.time,
+                    lat: request.chartData.lat || chartData.lat,
+                    lon: request.chartData.lon || chartData.lon
+                };
+            }
+            // Use payload-derived feature vector (payload is already generated from skyParams/astroData)
+            // This ensures different inputs produce different feature vectors
+            const featureVec = this.convertPayloadToFeatureVec(payload);
             // Generate musical plan from controls
             const { plan } = await (0, plan_generator_1.generatePlanMLOnly)(featureVec, payload);
             // Run audition gates (deterministic)
             let gateReport = await this.runAuditionGates(plan, payload.hash);
             // Test override for fail-closed testing
-            if ((_e = request.testOverride) === null || _e === void 0 ? void 0 : _e.forceFail) {
+            if ((_a = request.testOverride) === null || _a === void 0 ? void 0 : _a.forceFail) {
                 gateReport = {
                     ...gateReport,
                     calibrated: {
@@ -88,12 +105,12 @@ class ComposeAPI {
                 const currentGateReport = gateReport;
                 const overlayResult = this.textExplainer.generateOverlayExplanation(natalPayload, currentPayload, natalGateReport, currentGateReport, context);
                 text = overlayResult.text;
-                textMetricsMs = (_f = overlayResult.metrics) === null || _f === void 0 ? void 0 : _f.total_ms;
+                textMetricsMs = (_b = overlayResult.metrics) === null || _b === void 0 ? void 0 : _b.total_ms;
             }
             else {
                 const base = this.textExplainer.generateExplanation(payload, gateReport, context);
                 text = base.text;
-                textMetricsMs = (_g = base.metrics) === null || _g === void 0 ? void 0 : _g.total_ms;
+                textMetricsMs = (_c = base.metrics) === null || _c === void 0 ? void 0 : _c.total_ms;
             }
             // Generate audio (mock, deterministic latency & URL from seed)
             const audio = await this.generateAudio(plan, request.mode, payload.hash);
@@ -107,8 +124,8 @@ class ComposeAPI {
             const totalLatency = Number(endTime - startTime) / 1000000;
             // Structured observability log (single line)
             try {
-                const calibratedPass = !!((_h = gateReport === null || gateReport === void 0 ? void 0 : gateReport.calibrated) === null || _h === void 0 ? void 0 : _h.overall);
-                const strictPass = !!((_j = gateReport === null || gateReport === void 0 ? void 0 : gateReport.strict) === null || _j === void 0 ? void 0 : _j.overall);
+                const calibratedPass = !!((_d = gateReport === null || gateReport === void 0 ? void 0 : gateReport.calibrated) === null || _d === void 0 ? void 0 : _d.overall);
+                const strictPass = !!((_e = gateReport === null || gateReport === void 0 ? void 0 : gateReport.strict) === null || _e === void 0 ? void 0 : _e.overall);
                 const templateId = text === null || text === void 0 ? void 0 : text.template_id;
                 const textMetrics = this.textExplainer instanceof Object && 'generateExplanation' in this.textExplainer ? undefined : undefined;
                 const logEntry = {
@@ -141,8 +158,8 @@ class ComposeAPI {
             const explanation = {
                 spec: 'UnifiedSpecV1.1',
                 sections: [
-                    { title: 'Theme', text: (_k = text === null || text === void 0 ? void 0 : text.short) !== null && _k !== void 0 ? _k : '' },
-                    { title: 'Details', text: (_l = text === null || text === void 0 ? void 0 : text.long) !== null && _l !== void 0 ? _l : '' },
+                    { title: 'Theme', text: (_f = text === null || text === void 0 ? void 0 : text.short) !== null && _f !== void 0 ? _f : '' },
+                    { title: 'Details', text: (_g = text === null || text === void 0 ? void 0 : text.long) !== null && _g !== void 0 ? _g : '' },
                     { title: 'Bullets', text: Array.isArray(text === null || text === void 0 ? void 0 : text.bullets) ? text.bullets.join(' · ') : '' }
                 ]
             };

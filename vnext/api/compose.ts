@@ -58,17 +58,34 @@ export class ComposeAPI {
       // Generate control-surface payload based on mode
       const payload = await this.generateControlPayload(request);
       
-      // Use shared FeatureEncoder for consistent feature extraction
-      const chartData = {
-        date: (request as any).chartData?.date || '1990-01-01',
-        time: (request as any).chartData?.time || '12:00',
-        lat: (request as any).chartData?.lat || 40.7128,
-        lon: (request as any).chartData?.lon || -74.0060
+      // Extract date/time/location from request for feature encoding
+      // For sky mode, extract from skyParams
+      let chartData = {
+        date: '1990-01-01',
+        time: '12:00',
+        lat: 40.7128,
+        lon: -74.0060
       };
       
-      // const encodedFeatures = await this.featureEncoder.encode(chartData);
-      // const featureVec = encodedFeatures.features.featureVector;
-      const featureVec = new Float32Array([0.5, 0.6, 0.7, 0.7, 0.3, 0.6]); // Mock feature vector
+      if (request.mode === 'sky' && request.skyParams) {
+        // Extract date from datetime string (format: YYYY-MM-DDTHH:mm:ssZ)
+        const dt = new Date(request.skyParams.datetime);
+        chartData.date = dt.toISOString().split('T')[0];
+        chartData.time = dt.toISOString().split('T')[1].slice(0, 5); // HH:mm
+        chartData.lat = request.skyParams.latitude;
+        chartData.lon = request.skyParams.longitude;
+      } else if ((request as any).chartData) {
+        chartData = {
+          date: (request as any).chartData.date || chartData.date,
+          time: (request as any).chartData.time || chartData.time,
+          lat: (request as any).chartData.lat || chartData.lat,
+          lon: (request as any).chartData.lon || chartData.lon
+        };
+      }
+      
+      // Use payload-derived feature vector (payload is already generated from skyParams/astroData)
+      // This ensures different inputs produce different feature vectors
+      const featureVec = this.convertPayloadToFeatureVec(payload);
       
       // Generate musical plan from controls
       const { plan } = await generatePlanMLOnly(featureVec as any, payload);
