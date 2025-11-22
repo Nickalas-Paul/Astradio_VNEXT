@@ -684,6 +684,18 @@ const composeAPI = new ComposeAPI();
 export async function vnextCompose(req: any, res: any) {
   try {
     const request = req.body;
+    // Log what vnextCompose receives for Phase 2 validation
+    console.log('[VNEXT_COMPOSE] Received request:', {
+      hasBody: !!request,
+      mode: request?.mode,
+      hasSkyParams: !!request?.skyParams,
+      skyParams: request?.skyParams ? {
+        latitude: request.skyParams.latitude,
+        longitude: request.skyParams.longitude,
+        datetime: request.skyParams.datetime
+      } : null,
+      bodyKeys: request ? Object.keys(request) : []
+    });
     const response = await composeAPI.compose(request);
     res.json(response);
   } catch (error) {
