@@ -58,12 +58,34 @@ export async function POST(req: Request) {
       );
     }
 
+    const data = validationResult.data;
+
+    // Convert simplified input to "sky" mode format for ComposeAPI
+    // Default to current time and New York if not provided
+    const date = data.date || new Date().toISOString().split('T')[0];
+    const time = data.time || '12:00';
+    const latitude = data.geo?.lat ?? 40.7128; // Default to New York
+    const longitude = data.geo?.lon ?? -74.0060;
+
+    // Construct ISO 8601 datetime string
+    const datetime = `${date}T${time}:00Z`;
+
+    // Build sky mode request for ComposeAPI
+    const composeRequest = {
+      mode: 'sky' as const,
+      skyParams: {
+        latitude,
+        longitude,
+        datetime
+      }
+    };
+
     // Proxy to unified vNext ComposeAPI on Express (engine of record)
     const engineBase = process.env.ENGINE_BASE_URL || 'http://localhost:3000';
     const r = await fetch(`${engineBase}/api/compose`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(validationResult.data)
+      body: JSON.stringify(composeRequest)
     });
 
     // If engine is reachable, return its unified response (audio/text/viz)
