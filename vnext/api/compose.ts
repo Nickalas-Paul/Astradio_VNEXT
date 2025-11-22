@@ -41,8 +41,20 @@ export class ComposeAPI {
     const startTime = process.hrtime.bigint();
     
     try {
+      // Log incoming request for Phase 2 validation
+      console.log('[COMPOSE] Incoming request:', {
+        mode: (request as any)?.mode,
+        hasSkyParams: !!(request as any)?.skyParams,
+        skyParams: (request as any)?.skyParams ? {
+          latitude: (request as any).skyParams.latitude,
+          longitude: (request as any).skyParams.longitude,
+          datetime: (request as any).skyParams.datetime
+        } : null
+      });
+      
       // Accept empty body by defaulting to sandbox mode
       if (!request || !request.mode) {
+        console.log('[COMPOSE] Request missing mode, defaulting to sandbox');
         (request as any) = { mode: 'sandbox', controls: {} };
       }
       
@@ -60,6 +72,7 @@ export class ComposeAPI {
       }
       
       // Generate control-surface payload based on mode
+      console.log('[COMPOSE] Calling generateControlPayload with mode:', (request as any).mode);
       const payload = await this.generateControlPayload(request);
       
       // Extract date/time/location from request for feature encoding
@@ -316,9 +329,15 @@ export class ComposeAPI {
    * Generate control-surface payload based on request mode
    */
   private async generateControlPayload(request: ComposeRequest): Promise<ControlSurfacePayload> {
-    switch ((request as any).mode) {
+    const mode = (request as any).mode;
+    console.log('[COMPOSE] generateControlPayload: mode =', mode, 'hasSkyParams =', !!request.skyParams);
+    switch (mode) {
       case 'sky':
-        return this.generateSkyPayload(request.skyParams!);
+        if (!request.skyParams) {
+          console.error('[COMPOSE] ERROR: sky mode but no skyParams!');
+          throw new Error('sky mode requires skyParams');
+        }
+        return this.generateSkyPayload(request.skyParams);
       
       case 'overlay':
         return this.generateOverlayPayload(request.overlayParams!);

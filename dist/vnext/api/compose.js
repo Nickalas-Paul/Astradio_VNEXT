@@ -29,8 +29,19 @@ class ComposeAPI {
         var _a, _b, _c, _d, _e, _f, _g;
         const startTime = process.hrtime.bigint();
         try {
+            // Log incoming request for Phase 2 validation
+            console.log('[COMPOSE] Incoming request:', {
+                mode: request === null || request === void 0 ? void 0 : request.mode,
+                hasSkyParams: !!(request === null || request === void 0 ? void 0 : request.skyParams),
+                skyParams: (request === null || request === void 0 ? void 0 : request.skyParams) ? {
+                    latitude: request.skyParams.latitude,
+                    longitude: request.skyParams.longitude,
+                    datetime: request.skyParams.datetime
+                } : null
+            });
             // Accept empty body by defaulting to sandbox mode
             if (!request || !request.mode) {
+                console.log('[COMPOSE] Request missing mode, defaulting to sandbox');
                 request = { mode: 'sandbox', controls: {} };
             }
             // Generate idempotency key from request + model version
@@ -46,6 +57,7 @@ class ComposeAPI {
                 console.log('[COMPOSE] Cache disabled for Phase 2 validation');
             }
             // Generate control-surface payload based on mode
+            console.log('[COMPOSE] Calling generateControlPayload with mode:', request.mode);
             const payload = await this.generateControlPayload(request);
             // Extract date/time/location from request for feature encoding
             // For sky mode, extract from skyParams
@@ -266,8 +278,14 @@ class ComposeAPI {
      * Generate control-surface payload based on request mode
      */
     async generateControlPayload(request) {
-        switch (request.mode) {
+        const mode = request.mode;
+        console.log('[COMPOSE] generateControlPayload: mode =', mode, 'hasSkyParams =', !!request.skyParams);
+        switch (mode) {
             case 'sky':
+                if (!request.skyParams) {
+                    console.error('[COMPOSE] ERROR: sky mode but no skyParams!');
+                    throw new Error('sky mode requires skyParams');
+                }
                 return this.generateSkyPayload(request.skyParams);
             case 'overlay':
                 return this.generateOverlayPayload(request.overlayParams);
