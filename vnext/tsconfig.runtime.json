@@ -20,12 +20,16 @@
     }
   },
   "include": [
-    "api/**/*.ts",
+    "**/*.ts",
     "../lib/**/*.ts"
   ],
   "exclude": [
     "scripts/**/*.ts",
-    "explainer/**/*.ts"
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "**/test-*.ts",
+    "final-validation.ts",
+    "teacher/**/*.ts"
   ]
 }
 
