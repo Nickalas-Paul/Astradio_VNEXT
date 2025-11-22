@@ -598,20 +598,40 @@ exports.ComposeAPI = ComposeAPI;
 // Export handler function for server integration
 const composeAPI = new ComposeAPI();
 async function vnextCompose(req, res) {
+    var _a, _b, _c, _d;
     try {
-        const request = req.body;
+        let request = req.body;
         // Log what vnextCompose receives for Phase 2 validation
-        console.log('[VNEXT_COMPOSE] Received request:', {
+        console.log('[VNEXT_COMPOSE] Received raw request:', {
             hasBody: !!request,
-            mode: request === null || request === void 0 ? void 0 : request.mode,
+            bodyKeys: request ? Object.keys(request) : [],
+            hasMode: !!(request === null || request === void 0 ? void 0 : request.mode),
             hasSkyParams: !!(request === null || request === void 0 ? void 0 : request.skyParams),
-            skyParams: (request === null || request === void 0 ? void 0 : request.skyParams) ? {
-                latitude: request.skyParams.latitude,
-                longitude: request.skyParams.longitude,
-                datetime: request.skyParams.datetime
-            } : null,
-            bodyKeys: request ? Object.keys(request) : []
+            hasDate: !!(request === null || request === void 0 ? void 0 : request.date),
+            hasGeo: !!(request === null || request === void 0 ? void 0 : request.geo)
         });
+        // If request doesn't have mode, convert from simplified format to sky mode
+        // This handles requests that bypass the Next.js route handler
+        if (!(request === null || request === void 0 ? void 0 : request.mode) && ((request === null || request === void 0 ? void 0 : request.date) || (request === null || request === void 0 ? void 0 : request.geo))) {
+            console.log('[VNEXT_COMPOSE] Converting simplified input to sky mode');
+            const date = request.date || new Date().toISOString().split('T')[0];
+            const time = request.time || '12:00';
+            const latitude = (_b = (_a = request.geo) === null || _a === void 0 ? void 0 : _a.lat) !== null && _b !== void 0 ? _b : 40.7128; // Default to New York
+            const longitude = (_d = (_c = request.geo) === null || _c === void 0 ? void 0 : _c.lon) !== null && _d !== void 0 ? _d : -74.0060;
+            const datetime = `${date}T${time}:00Z`;
+            request = {
+                mode: 'sky',
+                skyParams: {
+                    latitude,
+                    longitude,
+                    datetime
+                }
+            };
+            console.log('[VNEXT_COMPOSE] Converted to sky mode:', {
+                mode: request.mode,
+                skyParams: request.skyParams
+            });
+        }
         const response = await composeAPI.compose(request);
         res.json(response);
     }
