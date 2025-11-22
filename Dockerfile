@@ -23,6 +23,13 @@ COPY --chown=node:node . .
 # Build only the runtime subset
 RUN npm run vnext:build:runtime
 
+# Fix build output path: compose.js is built to dist/vnext/vnext/api/compose.js
+# but server expects dist/vnext/api/compose.js - copy it to expected location
+RUN mkdir -p dist/vnext/api && \
+    if [ -f dist/vnext/vnext/api/compose.js ]; then \
+      cp dist/vnext/vnext/api/compose.js dist/vnext/api/compose.js; \
+    fi
+
 # Prepare writable dir for exports before switching user
 RUN mkdir -p /tmp/exports && chown -R node:node /tmp/exports
 
