@@ -37,10 +37,13 @@ class ComposeAPI {
             const requestKey = this.sha256(JSON.stringify(request) + this.runtimeModel);
             // TEMPORARY: Disable cache for Phase 2 validation
             // Check cache for idempotent response
-            const CACHE_ENABLED = process.env.ENABLE_COMPOSE_CACHE !== 'false'; // Default enabled, set to 'false' to disable
+            const CACHE_ENABLED = process.env.ENABLE_COMPOSE_CACHE === 'true'; // Default disabled for Phase 2, set to 'true' to enable
             if (CACHE_ENABLED && this.compositionCache.has(requestKey)) {
                 console.log('[COMPOSE] Returning cached composition for key:', requestKey.slice(0, 8));
                 return this.compositionCache.get(requestKey);
+            }
+            else if (!CACHE_ENABLED) {
+                console.log('[COMPOSE] Cache disabled for Phase 2 validation');
             }
             // Generate control-surface payload based on mode
             const payload = await this.generateControlPayload(request);
