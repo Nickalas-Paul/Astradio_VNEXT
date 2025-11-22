@@ -71,6 +71,8 @@ class ComposeAPI {
             // Use payload-derived feature vector (payload is already generated from skyParams/astroData)
             // This ensures different inputs produce different feature vectors
             const featureVec = this.convertPayloadToFeatureVec(payload);
+            // Log feature vector for Phase 2 validation
+            console.log('[COMPOSE] Feature vector:', Array.from(featureVec).map(v => v.toFixed(3)).join(', '));
             // Generate musical plan from controls
             const { plan } = await (0, plan_generator_1.generatePlanMLOnly)(featureVec, payload);
             // Run audition gates (deterministic)
@@ -166,8 +168,11 @@ class ComposeAPI {
                 ]
             };
             // Hashes for control, audio, explanation, viz (deterministic)
+            // Log payload JSON for Phase 2 validation
+            const payloadJson = JSON.stringify(payload);
+            console.log('[COMPOSE] Computing control hash from payload JSON (length:', payloadJson.length, 'chars)');
             const hashes = {
-                control: 'sha256:' + this.sha256(JSON.stringify(payload)),
+                control: 'sha256:' + this.sha256(payloadJson),
                 audio: 'sha256:' + this.sha256(audio.url + ':' + lengthSec.toString()),
                 explanation: 'sha256:' + this.sha256(JSON.stringify(explanation)),
                 viz: viz ? 'sha256:' + this.sha256(JSON.stringify(viz)) : null
