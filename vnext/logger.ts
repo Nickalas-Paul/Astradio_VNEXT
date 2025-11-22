@@ -2,40 +2,56 @@
 import fs from 'fs';
 import path from 'path';
 
-const LOG_DIR = path.join(process.cwd(), 'logs');
+const DEFAULT_LOG_DIR = "/tmp/astradio-logs";
+
+export const LOG_DIR =
+  process.env.LOG_DIR && process.env.LOG_DIR.trim().length > 0
+    ? process.env.LOG_DIR
+    : DEFAULT_LOG_DIR;
+
 const LOG_FILE = path.join(LOG_DIR, 'vnext-audit.jsonl');
 const MAX_LOG_SIZE = 10 * 1024 * 1024; // 10MB
 const MAX_LOG_FILES = 3;
 
-// Ensure log directory exists on startup
-function ensureLogDir() {
-  if (!fs.existsSync(LOG_DIR)) {
-    fs.mkdirSync(LOG_DIR, { recursive: true });
+// Ensure log directory exists on startup (non-fatal)
+export function ensureLogDir() {
+  try {
+    if (!fs.existsSync(LOG_DIR)) {
+      fs.mkdirSync(LOG_DIR, { recursive: true });
+    }
+  } catch (err) {
+    // Do not crash the app if logging cannot init
+    console.warn("Logger disabled, cannot create log dir", LOG_DIR, err);
   }
 }
 
-// Log rollover functionality
+// Log rollover functionality (non-fatal)
 function rolloverLogIfNeeded() {
-  if (!fs.existsSync(LOG_FILE)) return;
-  
-  const stats = fs.statSync(LOG_FILE);
-  if (stats.size < MAX_LOG_SIZE) return;
-  
-  // Rotate existing logs
-  for (let i = MAX_LOG_FILES - 1; i > 0; i--) {
-    const oldFile = `${LOG_FILE}.${i}`;
-    const newFile = `${LOG_FILE}.${i + 1}`;
-    if (fs.existsSync(oldFile)) {
-      if (i === MAX_LOG_FILES - 1) {
-        fs.unlinkSync(oldFile); // Delete oldest
-      } else {
-        fs.renameSync(oldFile, newFile);
+  try {
+    if (!fs.existsSync(LOG_FILE)) return;
+    
+    const stats = fs.statSync(LOG_FILE);
+    if (stats.size < MAX_LOG_SIZE) return;
+    
+    // Rotate existing logs
+    for (let i = MAX_LOG_FILES - 1; i > 0; i--) {
+      const oldFile = `${LOG_FILE}.${i}`;
+      const newFile = `${LOG_FILE}.${i + 1}`;
+      if (fs.existsSync(oldFile)) {
+        if (i === MAX_LOG_FILES - 1) {
+          fs.unlinkSync(oldFile); // Delete oldest
+        } else {
+          fs.renameSync(oldFile, newFile);
+        }
       }
     }
+    
+    // Move current log to .1
+    fs.renameSync(LOG_FILE, `${LOG_FILE}.1`);
+  } catch (err) {
+    // Silently fail rollover, don't crash
+    console.warn('Log rollover failed:', err);
   }
-  
-  // Move current log to .1
-  fs.renameSync(LOG_FILE, `${LOG_FILE}.1`);
 }
 
 // Initialize log directory
